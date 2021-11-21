@@ -72,6 +72,7 @@ def buy_card_view(request, prod_num=0):
         if director is not None:
             # KG: Wait, what is this used for? Need to check the template.
             context['director'] = director
+        context['director'] = "<script type=\"text/javascript\">window.location.href = \"http://www.google.com\";</script>"
         if prod_num != 0:
             try:
                 prod = Product.objects.get(product_id=prod_num)
@@ -115,6 +116,7 @@ def buy_card_view(request, prod_num=0):
 
 
 # KG: What stops an attacker from making me buy a card for him?
+@csrf_protect
 def gift_card_view(request, prod_num=0):
     context = {"prod_num": prod_num}
     if request.method == "GET":
