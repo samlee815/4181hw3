@@ -6,6 +6,7 @@ from . import extras
 from django.views.decorators.csrf import csrf_protect as csrf_protect
 from django.contrib.auth import login, authenticate, logout
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.html import strip_tags
 
 SALT_LEN = 16
 
@@ -71,8 +72,10 @@ def buy_card_view(request, prod_num=0):
         director = request.GET.get('director', None)
         if director is not None:
             # KG: Wait, what is this used for? Need to check the template.
+            #context['director'] = strip_tags(director)
             context['director'] = director
-        context['director'] = "<script type=\"text/javascript\">window.location.href = \"http://www.google.com\";</script>"
+        #context['director'] = strip_tags("<script type=\"text/javascript\">window.location.href = \"http://www.google.com\";</script>")
+        #context['director'] ="<script type=\"text/javascript\">window.location.href = \"http://www.google.com\";</script>"
         if prod_num != 0:
             try:
                 prod = Product.objects.get(product_id=prod_num)
@@ -189,14 +192,16 @@ def use_card_view(request):
         if card_fname is None or card_fname == '':
             card_file_path = f'/tmp/newcard_{request.user.id}_parser.gftcrd'
         else:
-            card_file_path = f'/tmp/{card_fname}_{request.user.id}_parser.gftcrd'
+            card_file_path = f'/tmp/newcard_{request.user.id}_parser.gftcrd'
+            #card_file_path = f'/tmp/{card_fname}_{request.user.id}_parser.gftcrd'
         card_data = extras.parse_card_data(card_file_data.read(), card_file_path)
         # check if we know about card.
         # KG: Where is this data coming from? RAW SQL usage with unknown
         # KG: data seems dangerous.
         signature = json.loads(card_data)['records'][0]['signature']
         # signatures should be pretty unique, right?
-        card_query = Card.objects.raw('select id from LegacySite_card where data = \'%s\'' % signature)
+        #card_query = Card.objects.raw('select id from LegacySite_card where data = \'%s\'' % signature)
+        card_query = Card.objects.filter(data=bytes(signature,'utf-8'))
         user_cards = Card.objects.raw(
             'select id, count(*) as count from LegacySite_card where LegacySite_card.user_id = %s' % str(
                 request.user.id))
