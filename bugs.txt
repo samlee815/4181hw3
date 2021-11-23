@@ -1,0 +1,35 @@
+uni : yl4111
+github link: github.com/samlee815/4181hw3
+
+Writeups:
+
+XSS attack
+
+The controller method buy_card_view will set context['director'] to the corresponding director in the params
+from the post request and display it in the template rendered and in the template the code director|safe
+automatically help this parameter skip the checking and escaping in the rendering, and this is essentially
+echoing the user input which is not good. So to exploit it, we just send a get request with params director
+set to an auto executing script that will redirect current window to another website (in my test case, google)
+to fix it, we simply remove the safe in the html which will allow django to properly escape the director input
+and to safely render the texts in the template, we can also use strip_tag function to sanitize the user input.
+
+
+CSRF attack:
+The controller method gitf_card_view will not check the csrf token so whenever a user is visiting the website,
+we can have another website(in my case, forge.html in the root directory) that contains a script that auto 
+executes a post request with username set to my account and amount set by myself thus without letting the user
+knowing, when the user clicks on our website, a gift card is automatically sent to my account, to protect against
+this, we just need to add csrf token to the post form on the page and use decorator method to protect the controller
+method.
+
+
+SQL Injection attack:
+In method use card view, when the user uploads their own card, the controller method will query the database with
+the signature of the card using raw query, this is also a vulnerable to sql injection, in my example, i use the
+sql_inection.gftcrd in the root directory with signature field in the json object set to a malicious query that 
+unions the original result and a query in the user table that queries the password of admin and we know in case
+where the query result size is not 0, the query result will be rendered by the html file(i do not know why it is
+implemented this way), so actually my query with malicious input and escaping will let me display the salted pwd
+of admin when i upload this card. to fix it , we will change the raw query to use the builit-in filter function
+provided by django framework, and use byte(file_stream) to provide escaping and prevent injection.
+
